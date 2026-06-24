@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>داقش — مجلس الورق</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --felt-deep: #0a3d2e;
+    --felt: #0f5740;
+    --felt-light: #157a59;
+    --wood: #3d2817;
+    --wood-light: #5c3d24;
+    --night: #0a0e14;
+    --night-2: #121826;
+    --gold: #d4af37;
+    --gold-bright: #f0d77a;
+    --gold-dim: #8a7220;
+    --cream: #f4ecd8;
+    --ink: #1a1410;
+    --danger: #c0392b;
+    --success: #2ecc71;
+    --text: #f4ecd8;
+    --text-dim: #b8a98a;
+    --card-w: clamp(46px, 12vw, 78px);
+    --card-h: calc(var(--card-w) * 1.45);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: radial-gradient(ellipse at top, var(--night-2), var(--night));
+    color: var(--text);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .display-font { font-family: 'Cairo', sans-serif; }
+
+  #app { position: relative; width: 100vw; height: 100dvh; overflow: hidden; }
+
+  /* ===== الشاشات ===== */
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ===== شاشة البداية ===== */
+  #start-screen {
+    align-items: center; justify-content: center;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 35%, rgba(21,122,89,0.25), transparent),
+      radial-gradient(ellipse at bottom, var(--night-2), var(--night));
+    text-align: center;
+  }
+  .ambient-table {
+    position: absolute; bottom: -20%; left: 50%; transform: translateX(-50%);
+    width: 140%; height: 60%;
+    background: radial-gradient(ellipse, var(--felt) 0%, var(--felt-deep) 60%, transparent 75%);
+    opacity: 0.4;
+    animation: breathe 8s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%,100%{transform:translateX(-50%) scale(1);opacity:0.35} 50%{transform:translateX(-50%) scale(1.05);opacity:0.5} }
+
+  .logo-wrap { position: relative; z-index: 2; margin-bottom: 8px; }
+  .logo {
+    font-family: 'Cairo', sans-serif; font-weight: 900;
+    direction: rtl; unicode-bidi: isolate;
+    font-size: clamp(64px, 18vw, 130px); line-height: 0.9;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold) 50%, var(--gold-dim));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 20px rgba(212,175,55,0.4));
+    letter-spacing: -2px;
+  }
+  .logo-sub { color: var(--text-dim); font-size: clamp(14px,4vw,20px); letter-spacing: 6px; margin-top: -4px; }
+  .logo-deco { width: 120px; height: 2px; margin: 18px auto; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+  .menu { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 14px; width: min(320px, 80vw); margin-top: 24px; }
+  .btn {
+    font-family: 'Tajawal', sans-serif; font-weight: 700; font-size: 18px;
+    padding: 16px 24px; border: none; border-radius: 14px; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+    color: var(--ink);
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary {
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    box-shadow: 0 6px 24px rgba(212,175,55,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .btn-primary:hover { filter: brightness(1.08); box-shadow: 0 8px 32px rgba(212,175,55,0.5); }
+  .btn-ghost {
+    background: rgba(255,255,255,0.05); color: var(--text);
+    border: 1px solid rgba(212,175,55,0.3); backdrop-filter: blur(8px);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); border-color: var(--gold); }
+
+  /* ===== الإعداد قبل اللعب ===== */
+  .panel {
+    background: linear-gradient(180deg, rgba(18,24,38,0.96), rgba(10,14,20,0.98));
+    border: 1px solid rgba(212,175,55,0.2);
+    border-radius: 20px; padding: 24px; width: min(440px, 90vw);
+    max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .panel h2 { font-family:'Cairo'; color: var(--gold-bright); margin-bottom: 6px; font-size: 24px; }
+  .panel .hint { color: var(--text-dim); font-size: 14px; margin-bottom: 20px; }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 15px; }
+  .field .val { color: var(--gold-bright); font-weight: 800; }
+  input[type=range] { width: 100%; accent-color: var(--gold); height: 6px; }
+  .seg { display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 12px; }
+  .seg button {
+    flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent;
+    color: var(--text-dim); font-family: 'Tajawal'; font-weight: 700; font-size: 14px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .seg button.on { background: linear-gradient(180deg, var(--gold-bright), var(--gold)); color: var(--ink); }
+  .center-screen { align-items: center; justify-content: center; padding: 20px;
+    background: radial-gradient(ellipse at top, var(--night-2), var(--night)); }
+
+  /* ===== طاولة اللعب ===== */
+  #game-screen { background: radial-gradient(ellipse at center, #0a1520, var(--night)); }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; z-index: 20; gap: 8px;
+  }
+  .pot-display {
+    background: linear-gradient(180deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+    border: 1px solid rgba(212,175,55,0.4); border-radius: 30px;
+    padding: 8px 20px; text-align: center; backdrop-filter: blur(8px);
+  }
+  .pot-display .label { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+  .pot-display .amount { font-family:'Cairo'; font-weight:900; font-size: 22px; color: var(--gold-bright); }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(212,175,55,0.25);
+    background: rgba(255,255,255,0.05); color: var(--text); cursor: pointer; font-size: 18px;
+    display: grid; place-items: center;
+  }
+
+  .table-area { flex: 1; position: relative; }
+  .felt {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: min(92vw, 760px); height: min(56vh, 460px);
+    background:
+      radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt) 45%, var(--felt-deep) 100%);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 12px var(--wood),
+      0 0 0 14px var(--wood-light),
+      0 30px 80px rgba(0,0,0,0.7),
+      inset 0 0 80px rgba(0,0,0,0.4);
+  }
+  .felt::after {
+    content: ''; position: absolute; inset: 8%;
+    border: 1px solid rgba(212,175,55,0.15); border-radius: 50%;
+  }
+  .table-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    text-align: center; z-index: 5; pointer-events: none; width: 60%;
+  }
+  .center-logo { font-family:'Cairo'; font-weight:900; font-size: clamp(28px,7vw,52px);
+    color: rgba(212,175,55,0.18); letter-spacing: 4px; }
+  .center-msg {
+    font-size: 15px; color: var(--gold-bright); margin-top: 4px; min-height: 22px;
+    font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+
+  /* مقاعد اللاعبين */
+  .seat {
+    position: absolute; transform: translate(-50%,-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: opacity 0.3s; z-index: 8;
+  }
+  .seat.folded { opacity: 0.35; filter: grayscale(0.8); }
+  .avatar {
+    width: clamp(42px,11vw,60px); height: clamp(42px,11vw,60px); border-radius: 50%;
+    background: linear-gradient(135deg, var(--night-2), #1f2940);
+    border: 2px solid rgba(212,175,55,0.3);
+    display: grid; place-items: center; font-size: 22px; position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .seat.active-turn .avatar {
+    border-color: var(--gold-bright);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.3), 0 0 20px rgba(212,175,55,0.5);
+    animation: pulse-turn 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse-turn { 0%,100%{box-shadow:0 0 0 3px rgba(212,175,55,0.3),0 0 16px rgba(212,175,55,0.4)} 50%{box-shadow:0 0 0 5px rgba(212,175,55,0.45),0 0 28px rgba(212,175,55,0.7)} }
+  .seat.is-boss .avatar { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold), 0 0 24px rgba(212,175,55,0.6); }
+  .boss-crown { position: absolute; top: -16px; font-size: 18px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5)); }
+  .seat-name { font-size: 12px; font-weight: 700; max-width: 80px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .seat-chips {
+    font-size: 12px; font-weight: 800; color: var(--gold-bright);
+    background: rgba(0,0,0,0.4); padding: 2px 10px; border-radius: 10px;
+  }
+  .seat-bid {
+    position: absolute; font-size: 11px; font-weight: 800; color: var(--ink);
+    background: var(--gold-bright); padding: 1px 8px; border-radius: 8px; white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .seat-action-bubble {
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+    background: var(--night-2); border: 1px solid var(--gold); color: var(--gold-bright);
+    padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 800; white-space: nowrap;
+    opacity: 0; pointer-events: none; z-index: 12;
+  }
+  .seat-action-bubble.show { animation: bubble 1.8s ease forwards; }
+  @keyframes bubble { 0%{opacity:0;transform:translateX(-50%) translateY(6px)} 15%{opacity:1;transform:translateX(-50%) translateY(0)} 80%{opacity:1} 100%{opacity:0} }
+
+  /* أوراق اللاعب الصغيرة (في المقعد) */
+  .mini-cards { display: flex; gap: -8px; height: 28px; }
+  .mini-card {
+    width: 18px; height: 26px; border-radius: 3px; margin-right: -8px;
+    background: linear-gradient(135deg, #8b1a1a, #5c0e0e);
+    border: 1px solid rgba(212,175,55,0.4);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  /* أوراق اللاعب البشري (يد سفلية) */
+  .my-hand {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 15; perspective: 800px;
+  }
+  .card {
+    width: var(--card-w); height: var(--card-h); border-radius: 8px;
+    position: relative; transition: transform 0.25s; cursor: default;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  }
+  .my-hand .card:hover { transform: translateY(-12px); }
+  .card-face {
+    position: absolute; inset: 0; border-radius: 8px;
+    background: linear-gradient(160deg, #fdfbf3, #ece3cc);
+    border: 1px solid rgba(0,0,0,0.15);
+    display: flex; flex-direction: column; justify-content: space-between; padding: 5px;
+  }
+  .card-corner { font-family:'Cairo'; font-weight:900; line-height: 0.85; font-size: clamp(13px,3.5vw,20px); }
+  .card-corner.bl { transform: rotate(180deg); align-self: flex-end; }
+  .card-pip { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: clamp(20px,6vw,34px); }
+  .red { color: #c0392b; }
+  .black { color: #1a1410; }
+  .card-back-face {
+    position: absolute; inset: 0; border-radius: 8px;
+    background:
+      repeating-linear-gradient(45deg, #5c0e0e 0 6px, #6e1414 6px 12px),
+      linear-gradient(135deg, #8b1a1a, #5c0e0e);
+    border: 2px solid var(--gold-dim);
+    display: grid; place-items: center;
+  }
+  .card-back-face::after { content:'◈'; color: var(--gold); font-size: 24px; opacity: 0.7; }
+
+  /* شريط الأفعال السفلي */
+  .action-bar {
+    display: flex; gap: 8px; padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, rgba(10,14,20,0.95) 40%);
+    z-index: 18; align-items: center; justify-content: center; flex-wrap: wrap;
+  }
+  .action-bar.hidden { display: none; }
+  .act-btn {
+    font-family:'Tajawal'; font-weight: 800; font-size: 15px; padding: 13px 18px;
+    border-radius: 14px; border: none; cursor: pointer; min-width: 80px;
+    transition: transform 0.12s, filter 0.15s; color: var(--ink);
+  }
+  .act-btn:active { transform: scale(0.94); }
+  .act-fold { background: linear-gradient(180deg,#e74c3c,#c0392b); color: #fff; }
+  .act-call { background: linear-gradient(180deg,#5dade2,#2e86c1); color: #fff; }
+  .act-raise { background: linear-gradient(180deg,var(--gold-bright),var(--gold)); }
+  .act-dagsh {
+    background: linear-gradient(180deg,var(--gold-bright),var(--gold));
+    color: var(--ink); font-family:'Cairo'; font-weight:900; font-size: 17px;
+    box-shadow: 0 0 24px rgba(212,175,55,0.6); animation: dagsh-glow 1.4s ease-in-out infinite;
+  }
+  @keyframes dagsh-glow { 0%,100%{box-shadow:0 0 18px rgba(212,175,55,0.5)} 50%{box-shadow:0 0 36px rgba(212,175,55,0.9)} }
+  .act-offer { background: linear-gradient(180deg,#52d681,#27ae60); color:#fff; }
+  .act-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* شريط رفع المبلغ */
+  .raise-row { display:none; width:100%; align-items:center; gap:10px; padding: 0 6px 6px; }
+  .raise-row.show { display:flex; }
+  .raise-row input { flex:1; accent-color: var(--gold); }
+  .raise-amount { font-family:'Cairo'; font-weight:900; color: var(--gold-bright); min-width: 70px; text-align:center; }
+
+  /* ===== النوافذ المنبثقة ===== */
+  .modal-overlay {
+    position: absolute; inset: 0; background: rgba(5,8,12,0.8); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: linear-gradient(180deg, var(--night-2), var(--night));
+    border: 1px solid rgba(212,175,55,0.35); border-radius: 22px; padding: 26px;
+    width: min(440px, 92vw); max-height: 88vh; overflow-y: auto;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.7); animation: modal-in 0.35s cubic-bezier(0.2,0.9,0.3,1.2);
+  }
+  @keyframes modal-in { from{opacity:0;transform:scale(0.9) translateY(20px)} to{opacity:1;transform:scale(1)} }
+  .modal h2 { font-family:'Cairo'; text-align:center; color: var(--gold-bright); margin-bottom: 4px; }
+  .modal .sub { text-align:center; color: var(--text-dim); margin-bottom: 18px; font-size: 14px; }
+
+  .winner-banner { text-align:center; margin-bottom: 18px; }
+  .winner-name { font-family:'Cairo'; font-weight:900; font-size: 30px; color: var(--gold-bright); }
+  .winner-trophy { font-size: 56px; animation: trophy-bounce 0.6s ease; }
+  @keyframes trophy-bounce { 0%{transform:scale(0) rotate(-20deg)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+  .summary-row { display:flex; justify-content:space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .summary-row .k { color: var(--text-dim); }
+  .summary-row .v { font-weight: 800; color: var(--text); }
+
+  /* عرض الأوراق المكشوفة في داقش */
+  .reveal-grid { display:flex; flex-direction:column; gap: 10px; margin: 16px 0; }
+  .reveal-player {
+    display:flex; align-items:center; gap: 12px; padding: 10px;
+    border-radius: 12px; background: rgba(255,255,255,0.04);
+    border: 1px solid transparent; transition: all 0.3s;
+  }
+  .reveal-player.winner { border-color: var(--gold); background: rgba(212,175,55,0.12); }
+  .reveal-player .rp-name { flex:1; font-weight:700; }
+  .reveal-player .rp-project { font-size: 12px; color: var(--gold-bright); font-weight:800; }
+  .reveal-cards { display:flex; gap: 3px; }
+  .rc { width: 26px; height: 36px; border-radius: 4px; background: linear-gradient(160deg,#fdfbf3,#ece3cc);
+    display:grid; place-items:center; font-family:'Cairo'; font-weight:900; font-size: 11px; border:1px solid rgba(0,0,0,0.15); }
+
+  .rules-list { counter-reset: r; }
+  .rules-list li { list-style: none; position: relative; padding: 12px 0 12px 0; padding-inline-start: 44px;
+    border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; line-height: 1.6; }
+  .rules-list li::before {
+    counter-increment: r; content: counter(r);
+    position: absolute; inset-inline-start: 0; top: 12px; width: 30px; height: 30px;
+    background: linear-gradient(180deg,var(--gold-bright),var(--gold)); color: var(--ink);
+    border-radius: 50%; display:grid; place-items:center; font-family:'Cairo'; font-weight:900;
+  }
+  .rules-list li b { color: var(--gold-bright); }
+  .project-rank { display:flex; flex-direction:column; gap:8px; margin-top: 8px; }
+  .pr-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px;
+    background: rgba(255,255,255,0.04); border-radius: 10px; border-inline-start: 3px solid var(--gold); }
+  .pr-item .pr-num { color: var(--gold-bright); font-weight:900; font-family:'Cairo'; }
+
+  .toast {
+    position: absolute; top: 70px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: var(--night-2); border: 1px solid var(--gold); color: var(--gold-bright);
+    padding: 10px 20px; border-radius: 30px; font-weight: 700; z-index: 60; opacity: 0;
+    transition: all 0.3s; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* تأثير الرقائق المتطايرة عند الفوز */
+  .confetti { position: absolute; width: 10px; height: 14px; z-index: 55; pointer-events: none; }
+
+  .modal-actions { display:flex; gap:10px; margin-top: 18px; }
+  .modal-actions .btn { flex:1; }
+
+  .hint-bubble {
+    position: absolute; background: var(--night-2); border: 1px solid var(--gold);
+    color: var(--cream); padding: 12px 16px; border-radius: 14px; font-size: 13px; line-height:1.5;
+    max-width: 240px; z-index: 40; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .hint-bubble::after { content:''; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
+    border:8px solid transparent; border-top-color: var(--gold); }
+
+  /* القابلية للوصول */
+  :focus-visible { outline: 3px solid var(--gold-bright); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.05ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- شاشة البداية -->
+  <section id="start-screen" class="screen active">
+    <div class="ambient-table"></div>
+    <div class="logo-wrap">
+      <div class="logo display-font">داقش</div>
+      <div class="logo-sub">مجلس الورق</div>
+      <div class="logo-deco"></div>
+    </div>
+    <div class="menu">
+      <button class="btn btn-primary" onclick="UI.openSetup()">العب الآن</button>
+      <button class="btn btn-ghost" onclick="UI.showRules()">القوانين</button>
+      <button class="btn btn-ghost" onclick="UI.openSettings()">الإعدادات</button>
+    </div>
+  </section>
+
+  <!-- شاشة الإعداد -->
+  <section id="setup-screen" class="screen center-screen">
+    <div class="panel">
+      <h2 class="display-font">جلسة جديدة</h2>
+      <p class="hint">اضبط الجلسة ثم ابدأ اللعب ضد الخصوم.</p>
+      <div class="field">
+        <label>عدد اللاعبين: <span class="val" id="pc-val">4</span></label>
+        <input type="range" id="pc-range" min="4" max="10" value="4" oninput="UI.onPlayerCount(this.value)">
+      </div>
+      <div class="field">
+        <label>الرصيد الابتدائي: <span class="val" id="chips-val">10,000</span> فيشة</label>
+        <input type="range" id="chips-range" min="2000" max="50000" step="1000" value="10000" oninput="UI.onChips(this.value)">
+      </div>
+      <div class="field">
+        <label>مستوى الخصوم</label>
+        <div class="seg" id="diff-seg">
+          <button data-v="beginner" onclick="UI.setDiff('beginner')">مبتدئ</button>
+          <button data-v="intermediate" class="on" onclick="UI.setDiff('intermediate')">متوسط</button>
+          <button data-v="professional" onclick="UI.setDiff('professional')">محترف</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>جودة الرسوم</label>
+        <div class="seg" id="quality-seg">
+          <button data-v="medium" onclick="UI.setQuality('medium')">متوسطة</button>
+          <button data-v="high" class="on" onclick="UI.setQuality('high')">عالية</button>
+          <button data-v="ultra" onclick="UI.setQuality('ultra')">Ultra</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="UI.goStart()">رجوع</button>
+        <button class="btn btn-primary" onclick="UI.startGame()">ابدأ الجلسة</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- شاشة اللعب -->
+  <section id="game-screen" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" onclick="UI.openInGameMenu()">☰</button>
+      <div class="pot-display">
+        <div class="label">القِدر</div>
+        <div class="amount" id="pot-amount">0</div>
+      </div>
+      <button class="icon-btn" onclick="UI.showRules()">؟</button>
+    </div>
+    <div class="table-area" id="table-area">
+      <div class="felt"></div>
+      <div class="table-center">
+        <div class="center-logo display-font">داقش</div>
+        <div class="center-msg" id="center-msg"></div>
+      </div>
+      <!-- المقاعد تُحقن ديناميكيًا -->
+      <div class="my-hand" id="my-hand"></div>
+    </div>
+    <div class="raise-row" id="raise-row">
+      <span style="font-size:13px;color:var(--text-dim)">المبلغ</span>
+      <input type="range" id="raise-slider" oninput="UI.onRaiseSlide(this.value)">
+      <span class="raise-amount" id="raise-amount">0</span>
+      <button class="act-btn act-raise" onclick="UI.confirmRaise()">تأكيد</button>
+    </div>
+    <div class="action-bar" id="action-bar"></div>
+  </section>
+
+  <!-- النوافذ -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal-content"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script type="module">
+// ============================================================
+//  نواة المنطق (مضمّنة من src/core — نفس الكود المُختبر)
+// ============================================================
+const DEFAULT_CONFIG = {
+  players: { min: 4, max: 10 },
+  startingChips: 10000,
+  cardsPerPlayer: 4,
+  cardRanking: ["A","K","Q","J","10","9","8","7","6","5","4","3","2"],
+  handRanking: ["quad","triple","two_pair","pair","high_card"],
+  tieBreak: "split",
+  turnDurationSec: 20,
+  minRaise: 100,
+  ante: 50,
+};
+const CARD_LABELS = { A:"أ",K:"ش",Q:"بـ",J:"و","10":"١٠","9":"٩","8":"٨","7":"٧","6":"٦","5":"٥","4":"٤","3":"٣","2":"٢" };
+const CARD_FULL = { A:"أكة",K:"شايب",Q:"بنت",J:"ولد","10":"عشرة","9":"تسعة","8":"ثمانية","7":"سبعة","6":"ستة","5":"خمسة","4":"أربعة","3":"ثلاثة","2":"اثنان" };
+const SUITS = ["hearts","diamonds","clubs","spades"];
+const SUIT_SYM = { hearts:"♥", diamonds:"♦", clubs:"♣", spades:"♠" };
+const SUIT_RED = { hearts:true, diamonds:true, clubs:false, spades:false };
+const PROJECT_LABELS = { quad:"رباعية", triple:"ثلاثية", two_pair:"زوجين", pair:"زوج", high_card:"أعلى ورقة" };
+
+function buildDeck(config){ const d=[]; for(const r of config.cardRanking) for(const s of SUITS) d.push({rank:r,suit:s,id:`${r}_${s}`}); return d; }
+function shuffle(deck, rng=Math.random){ const a=[...deck]; for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function deal(deck, n, config){ const h=Array.from({length:n},()=>[]); let i=0; for(let c=0;c<config.cardsPerPlayer;c++) for(let p=0;p<n;p++) h[p].push(deck[i++]); return h; }
+function cardValue(rank, config){ const i=config.cardRanking.indexOf(rank); return config.cardRanking.length-i; }
+function evaluateHand(hand, config){
+  const counts={}; for(const c of hand) counts[c.rank]=(counts[c.rank]||0)+1;
+  const sorted=hand.map(c=>({rank:c.rank,value:cardValue(c.rank,config)})).sort((a,b)=>b.value-a.value);
+  const cv=Object.values(counts).sort((a,b)=>b-a);
+  let project;
+  if(cv[0]===4)project="quad"; else if(cv[0]===3)project="triple";
+  else if(cv[0]===2&&cv[1]===2)project="two_pair"; else if(cv[0]===2)project="pair"; else project="high_card";
+  const projectRank=config.handRanking.length-config.handRanking.indexOf(project);
+  const groups=Object.entries(counts).map(([rank,cnt])=>({rank,cnt,value:cardValue(rank,config)})).sort((a,b)=>b.cnt-a.cnt||b.value-a.value);
+  const tiebreakValues=[]; for(const g of groups) for(let k=0;k<g.cnt;k++) tiebreakValues.push(g.value);
+  return { project, projectRank, tiebreakValues, highValue:sorted[0].value, label:PROJECT_LABELS[project], sortedRanks:sorted };
+}
+function compareHands(a,b,config){
+  const ea=a.project?a:evaluateHand(a,config); const eb=b.project?b:evaluateHand(b,config);
+  if(ea.projectRank!==eb.projectRank) return ea.projectRank-eb.projectRank;
+  const len=Math.max(ea.tiebreakValues.length,eb.tiebreakValues.length);
+  for(let i=0;i<len;i++){ const va=ea.tiebreakValues[i]??0, vb=eb.tiebreakValues[i]??0; if(va!==vb) return va-vb; }
+  return 0;
+}
+function determineWinner(players, config){
+  const evals={}; for(const p of players) evals[p.id]=evaluateHand(p.hand,config);
+  let best=null, winners=[];
+  for(const p of players){
+    if(best===null){best=p;winners=[p.id];continue;}
+    const cmp=compareHands(evals[p.id],evals[best.id],config);
+    if(cmp>0){best=p;winners=[p.id];} else if(cmp===0) winners.push(p.id);
+  }
+  return { winners, evaluations:evals, isTie:winners.length>1 };
+}
+function settlePot(winners, pot, config){
+  if(winners.length===1) return {[winners[0]]:pot};
+  const r={}; const share=Math.floor(pot/winners.length); let rem=pot-share*winners.length;
+  for(const w of winners) r[w]=share+(rem-->0?1:0);
+  return r;
+}
+
+// ============ آلة حالة الجولة ============
+const PHASE = { DEALING:"DEALING", BIDDING:"BIDDING", BOSS_DECISION:"BOSS_DECISION", OFFER:"OFFER", REVEAL:"REVEAL", SETTLEMENT:"SETTLEMENT", SUMMARY:"SUMMARY" };
+
+function createRound(playerStates, dealerIndex, config, rng=Math.random){
+  const deck=shuffle(buildDeck(config),rng);
+  const hands=deal(deck,playerStates.length,config);
+  const players=playerStates.map((p,i)=>({...p,hand:hands[i],inRound:true,folded:false,currentBid:0,eval:evaluateHand(hands[i],config)}));
+  let pot=0;
+  for(const p of players){ const ante=Math.min(config.ante,p.chips); p.chips-=ante; p.currentBid+=ante; pot+=ante; }
+  const firstBidder=(dealerIndex+1)%players.length;
+  return { config, players, pot, phase:PHASE.BIDDING, dealerIndex, currentBid:config.ante, highBid:config.ante,
+    bossIndex:firstBidder, turnIndex:firstBidder, lastRaiserIndex:firstBidder, actedSinceRaise:new Set(), log:[], result:null, offer:null };
+}
+function activePlayers(state){ return state.players.filter(p=>p.inRound&&!p.folded); }
+function advanceTurn(state){
+  const n=state.players.length; let next=state.turnIndex;
+  for(let i=0;i<n;i++){ next=(next+1)%n; if(state.players[next].inRound&&!state.players[next].folded){ state.turnIndex=next; return; } }
+}
+function applyAction(state, playerId, action){
+  const player=state.players.find(p=>p.id===playerId);
+  if(state.phase!==PHASE.BIDDING) throw new Error("مرحلة غير صالحة");
+  if(state.players[state.turnIndex].id!==playerId) throw new Error("ليس دوره");
+  if(action.type==="fold"){ player.folded=true; player.inRound=false; state.log.push({type:"fold",playerId,name:player.name}); }
+  else if(action.type==="call"){ const need=state.highBid-player.currentBid; const pay=Math.min(need,player.chips); player.chips-=pay; player.currentBid+=pay; state.pot+=pay; state.log.push({type:"call",playerId,name:player.name,amount:pay}); }
+  else if(action.type==="raise"){ const minT=state.highBid+state.config.minRaise; const target=Math.max(action.amount??minT,minT); const need=target-player.currentBid; const pay=Math.min(need,player.chips); player.chips-=pay; player.currentBid+=pay; state.pot+=pay; state.highBid=player.currentBid; state.currentBid=player.currentBid; state.bossIndex=state.players.indexOf(player); state.lastRaiserIndex=state.bossIndex; state.log.push({type:"raise",playerId,name:player.name,amount:pay,to:state.highBid}); }
+  const active=activePlayers(state);
+  if(active.length===1){ state.phase=PHASE.SETTLEMENT; state.result={type:"last_standing",winners:[active[0].id],payouts:{[active[0].id]:state.pot},revealed:false}; applySettlement(state); return state; }
+  if(action.type==="raise"){ state.actedSinceRaise=new Set([playerId]); }
+  else { state.actedSinceRaise=state.actedSinceRaise||new Set(); state.actedSinceRaise.add(playerId); }
+  if(active.every(p=>state.actedSinceRaise.has(p.id))){ state.phase=PHASE.BOSS_DECISION; state.turnIndex=state.bossIndex; return state; }
+  advanceTurn(state);
+  return state;
+}
+function bossDecide(state, decision){
+  if(state.phase!==PHASE.BOSS_DECISION&&state.phase!==PHASE.OFFER) throw new Error("ليست مرحلة قرار الـ Boss");
+  const boss=state.players[state.bossIndex];
+  if(decision.type==="dagsh"){
+    state.phase=PHASE.REVEAL;
+    const c=activePlayers(state); const {winners,evaluations}=determineWinner(c,state.config);
+    const payouts=settlePot(winners,state.pot,state.config);
+    state.result={type:"dagsh",winners,payouts,evaluations,revealed:true,bossId:boss.id};
+    state.log.push({type:"dagsh",playerId:boss.id,name:boss.name}); return state;
+  }
+  if(decision.type==="offer"){
+    state.phase=PHASE.OFFER; state.offer={from:boss.id,amount:decision.amount,responses:{}};
+    state.log.push({type:"offer",playerId:boss.id,name:boss.name,amount:decision.amount}); return state;
+  }
+}
+function respondToOffer(state, playerId, response){
+  state.offer.responses[playerId]=response;
+  const others=activePlayers(state).filter(p=>p.id!==state.offer.from);
+  if(!others.every(p=>state.offer.responses[p.id])) return state;
+  const allAccepted=others.every(p=>state.offer.responses[p.id]==="accept");
+  if(allAccepted){ state.phase=PHASE.SETTLEMENT; state.result={type:"offer_accepted",winners:[state.offer.from],payouts:{[state.offer.from]:state.pot},revealed:false}; applySettlement(state); }
+  else return bossDecide(state,{type:"dagsh"});
+  return state;
+}
+function confirmReveal(state){ state.phase=PHASE.SETTLEMENT; applySettlement(state); return state; }
+function applySettlement(state){ for(const [id,amt] of Object.entries(state.result.payouts)){ const p=state.players.find(x=>x.id===id); if(p) p.chips+=amt; } state.phase=PHASE.SUMMARY; }
+
+// ============ بوتات الذكاء ============
+function handStrength(hand, config){
+  const e=evaluateHand(hand,config);
+  const base={quad:0.97,triple:0.82,two_pair:0.62,pair:0.42,high_card:0.15}[e.project];
+  return Math.min(0.99, base+(e.highValue/config.cardRanking.length)*0.12);
+}
+function botBidDecision(state, playerId){
+  const p=state.players.find(x=>x.id===playerId); const config=state.config;
+  const s=handStrength(p.hand,config); const level=p.botLevel||"beginner";
+  const toCall=state.highBid-p.currentBid; const potOdds=toCall/(state.pot+toCall||1);
+  const mkRaise=(m)=>({type:"raise",amount:Math.min(state.highBid+config.minRaise*m, p.currentBid+p.chips)});
+  if(level==="beginner"){
+    if(s<0.25&&toCall>0) return Math.random()<0.7?{type:"fold"}:{type:"call"};
+    if(s>0.7&&Math.random()<0.5) return mkRaise(1);
+    return {type:"call"};
+  }
+  if(level==="intermediate"){
+    if(s<potOdds-0.1&&toCall>0) return {type:"fold"};
+    if(s>0.75&&Math.random()<0.55) return mkRaise(1);
+    if(s>0.55&&Math.random()<0.25) return mkRaise(1);
+    return {type:"call"};
+  }
+  const aggression=state.log.filter(l=>l.type==="raise").length/Math.max(1,state.players.length);
+  const bluff=s<0.4&&Math.random()<0.18&&aggression<0.5;
+  if(bluff) return mkRaise(2);
+  if(s<potOdds-0.05&&toCall>0) return {type:"fold"};
+  if(s>0.85) return mkRaise(2);
+  if(s>0.65&&Math.random()<0.6) return mkRaise(1);
+  if(s>0.5&&aggression<0.4&&Math.random()<0.3) return mkRaise(1);
+  return {type:"call"};
+}
+function botBossDecision(state){
+  const boss=state.players[state.bossIndex]; const s=handStrength(boss.hand,state.config); const level=boss.botLevel;
+  if(level==="professional"){ if(s>0.78) return {type:"dagsh"}; if(s>0.45) return {type:"offer",amount:Math.round(state.pot*0.35)}; return {type:"offer",amount:Math.round(state.pot*0.2)}; }
+  if(level==="intermediate"){ if(s>0.7) return {type:"dagsh"}; return {type:"offer",amount:Math.round(state.pot*0.4)}; }
+  return s>0.6?{type:"dagsh"}:{type:"offer",amount:Math.round(state.pot*0.5)};
+}
+function botOfferResponse(state, playerId){
+  const p=state.players.find(x=>x.id===playerId); const s=handStrength(p.hand,state.config);
+  const share=state.offer.amount/Math.max(1,state.pot);
+  if(s>0.7) return "reject";
+  if(s<0.4&&share>0.3) return "accept";
+  if((p.botLevel==="professional"||p.botLevel==="intermediate")&&s>0.55) return Math.random()<0.5?"reject":"accept";
+  return Math.random()<0.6?"accept":"reject";
+}
+function botThinkDelay(level){
+  const r={beginner:[400,900],intermediate:[600,1400],professional:[800,2000]}[level]||[400,900];
+  return Math.round(r[0]+Math.random()*(r[1]-r[0]));
+}
+
+// ============================================================
+//  واجهة المستخدم والتحكم
+// ============================================================
+const fmt = (n) => n.toLocaleString("en-US");
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const vibrate = (ms) => { if (navigator.vibrate && G.settings.haptics) navigator.vibrate(ms); };
+
+const NAMES = ["فهد","سعود","نورة","ماجد","ريم","عبدالله","لمى","تركي","هند","بدر","سارة"];
+
+const G = {
+  config: { ...DEFAULT_CONFIG },
+  settings: { difficulty: "intermediate", quality: "high", haptics: true },
+  numPlayers: 4,
+  startingChips: 10000,
+  players: [],     // أرصدة مستمرة عبر الجلسة
+  dealerIndex: 0,
+  round: null,
+  roundCount: 0,
+  firstRound: true,
+  history: [],
+  busy: false,
+};
+
+const UI = {
+  // ----- التنقل -----
+  show(id) { document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")); $(id).classList.add("active"); },
+  goStart() { this.show("start-screen"); },
+  openSetup() { this.show("setup-screen"); },
+
+  onPlayerCount(v) { G.numPlayers = +v; $("pc-val").textContent = v; },
+  onChips(v) { G.startingChips = +v; $("chips-val").textContent = fmt(+v); },
+  setDiff(v) { G.settings.difficulty = v; document.querySelectorAll("#diff-seg button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); },
+  setQuality(v) { G.settings.quality = v; document.querySelectorAll("#quality-seg button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); },
+
+  // ----- بدء الجلسة -----
+  startGame() {
+    G.config = { ...DEFAULT_CONFIG, startingChips: G.startingChips };
+    G.players = [];
+    // اللاعب البشري دائمًا الفهرس 0
+    G.players.push({ id: "you", name: "أنت", chips: G.startingChips, isBot: false });
+    const shuffledNames = [...NAMES].sort(() => Math.random() - 0.5);
+    for (let i = 1; i < G.numPlayers; i++) {
+      G.players.push({ id: "bot" + i, name: shuffledNames[i - 1], chips: G.startingChips, isBot: true, botLevel: G.settings.difficulty });
+    }
+    G.dealerIndex = Math.floor(Math.random() * G.numPlayers);
+    G.roundCount = 0;
+    G.firstRound = true;
+    G.history = [];
+    this.show("game-screen");
+    this.layoutSeats();
+    setTimeout(() => this.newRound(), 400);
+  },
+
+  // ----- توزيع المقاعد حول الطاولة -----
+  layoutSeats() {
+    const area = $("table-area");
+    area.querySelectorAll(".seat").forEach(s => s.remove());
+    const n = G.players.length;
+    // اللاعب البشري أسفل المنتصف، الباقون موزعون على القوس العلوي
+    G.players.forEach((p, i) => {
+      const seat = document.createElement("div");
+      seat.className = "seat";
+      seat.id = "seat-" + p.id;
+      // زاوية: اللاعب 0 في الأسفل (90°)، البقية موزعة
+      const angle = (Math.PI / 2) + (i / n) * 2 * Math.PI;
+      const rx = 40, ry = 40;
+      const cx = 50 + rx * Math.cos(angle);
+      const cy = 50 + ry * Math.sin(angle);
+      seat.style.left = cx + "%";
+      seat.style.top = cy + "%";
+      seat.innerHTML = `
+        <div class="boss-crown" style="display:none">👑</div>
+        <div class="seat-action-bubble"></div>
+        <div class="avatar">${p.isBot ? "🧔" : "🙂"}</div>
+        <div class="seat-name">${p.name}</div>
+        <div class="seat-chips" id="chips-${p.id}">${fmt(p.chips)}</div>`;
+      area.appendChild(seat);
+    });
+  },
+
+  // ----- جولة جديدة -----
+  async newRound() {
+    // إزالة اللاعبين المفلسين
+    const alive = G.players.filter(p => p.chips > 0);
+    if (alive.filter(p => !p.isBot).length === 0) { this.endSession("نفد رصيدك! انتهت الجلسة."); return; }
+    if (alive.length < 2) { this.endSession(alive[0]?.id === "you" ? "فزت بكل الفيش! 🏆" : "خسرت الجلسة."); return; }
+
+    G.roundCount++;
+    G.dealerIndex = (G.dealerIndex + 1) % G.players.length;
+    // تخطّي الموزّع المفلس
+    while (G.players[G.dealerIndex].chips <= 0) G.dealerIndex = (G.dealerIndex + 1) % G.players.length;
+
+    const dealerId = G.players[G.dealerIndex].id;
+    const states = G.players.filter(p => p.chips > 0)
+      .map(p => ({ id: p.id, name: p.name, chips: p.chips, isBot: p.isBot, botLevel: p.botLevel }));
+    const dealerIdxInStates = Math.max(0, states.findIndex(s => s.id === dealerId));
+
+    G.round = createRound(states, dealerIdxInStates, G.config);
+    this.renderTable();
+    this.setCenterMsg("توزيع الورق…");
+    await this.dealAnimation();
+    this.setCenterMsg("");
+    if (G.firstRound) this.showFirstRoundHint();
+    this.tick();
+  },
+
+  async dealAnimation() {
+    vibrate(20);
+    // كشف يد اللاعب البشري تدريجيًا
+    const me = G.round.players.find(p => p.id === "you");
+    if (me) {
+      const hand = $("my-hand"); hand.innerHTML = "";
+      for (let i = 0; i < me.hand.length; i++) {
+        await sleep(140);
+        hand.appendChild(this.cardEl(me.hand[i]));
+        vibrate(10);
+      }
+    }
+    await sleep(200);
+  },
+
+  cardEl(card) {
+    const el = document.createElement("div");
+    el.className = "card";
+    const red = SUIT_RED[card.suit] ? "red" : "black";
+    el.innerHTML = `<div class="card-face">
+      <div class="card-corner ${red}">${CARD_LABELS[card.rank]}<br>${SUIT_SYM[card.suit]}</div>
+      <div class="card-pip ${red}">${SUIT_SYM[card.suit]}</div>
+      <div class="card-corner bl ${red}">${CARD_LABELS[card.rank]}<br>${SUIT_SYM[card.suit]}</div>
+    </div>`;
+    return el;
+  },
+
+  // ----- رسم الطاولة -----
+  renderTable() {
+    const s = G.round;
+    $("pot-amount").textContent = fmt(s.pot);
+    s.players.forEach((p) => {
+      const seat = $("seat-" + p.id);
+      if (!seat) return;
+      seat.classList.toggle("folded", p.folded);
+      seat.classList.toggle("is-boss", s.players.indexOf(p) === s.bossIndex && (s.phase !== PHASE.DEALING));
+      seat.classList.toggle("active-turn", s.players.indexOf(p) === s.turnIndex && s.phase === PHASE.BIDDING);
+      seat.querySelector(".boss-crown").style.display = (s.players.indexOf(p) === s.bossIndex && s.highBid > s.config.ante) ? "block" : "none";
+      $("chips-" + p.id).textContent = fmt(p.chips);
+      // أوراق البوتات (ظهر)
+      if (p.isBot && !seat.querySelector(".mini-cards")) {
+        const mc = document.createElement("div");
+        mc.className = "mini-cards";
+        mc.innerHTML = "<div class='mini-card'></div>".repeat(4);
+        seat.insertBefore(mc, seat.querySelector(".seat-name"));
+      }
+    });
+  },
+
+  setCenterMsg(t) { $("center-msg").textContent = t; },
+
+  showActionBubble(playerId, text) {
+    const seat = $("seat-" + playerId);
+    if (!seat) return;
+    const b = seat.querySelector(".seat-action-bubble");
+    b.textContent = text;
+    b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+  },
+
+  // ----- محرك الدور -----
+  async tick() {
+    if (G.busy) return;
+    const s = G.round;
+    this.renderTable();
+
+    if (s.phase === PHASE.BIDDING) {
+      const current = s.players[s.turnIndex];
+      if (current.isBot) {
+        await this.botTurn(current);
+      } else {
+        this.showHumanActions();
+      }
+      return;
+    }
+    if (s.phase === PHASE.BOSS_DECISION) {
+      const boss = s.players[s.bossIndex];
+      if (boss.isBot) await this.botBoss(boss);
+      else this.showBossActions();
+      return;
+    }
+    if (s.phase === PHASE.OFFER) {
+      await this.handleOfferPhase();
+      return;
+    }
+    if (s.phase === PHASE.SUMMARY) {
+      this.showSummary();
+      return;
+    }
+  },
+
+  // ----- دور البوت في السوم -----
+  async botTurn(bot) {
+    G.busy = true;
+    this.hideActions();
+    this.setCenterMsg(bot.name + " يفكّر…");
+    await sleep(botThinkDelay(bot.botLevel));
+    const decision = botBidDecision(G.round, bot.id);
+    const labels = { fold: "انسحب", call: G.round.highBid > bot.currentBid ? "ساوم" : "مرّر", raise: "ارفع ↑" };
+    this.showActionBubble(bot.id, labels[decision.type]);
+    if (decision.type === "raise") vibrate(15);
+    applyAction(G.round, bot.id, decision);
+    this.setCenterMsg("");
+    G.busy = false;
+    await sleep(450);
+    this.tick();
+  },
+
+  // ----- قرار البوت كـ Boss -----
+  async botBoss(boss) {
+    G.busy = true;
+    this.hideActions();
+    this.setCenterMsg(boss.name + " (الشيخ) يقرر…");
+    await sleep(botThinkDelay(boss.botLevel) + 300);
+    const decision = botBossDecision(G.round);
+    if (decision.type === "dagsh") {
+      this.showActionBubble(boss.id, "داقش! 🔥");
+      vibrate([30, 40, 30]);
+      bossDecide(G.round, { type: "dagsh" });
+      this.setCenterMsg("");
+      G.busy = false;
+      await this.revealSequence();
+    } else {
+      this.showActionBubble(boss.id, "عرض: " + fmt(decision.amount));
+      bossDecide(G.round, decision);
+      this.setCenterMsg("");
+      G.busy = false;
+      this.tick();
+    }
+  },
+
+  // ----- أفعال اللاعب البشري -----
+  showHumanActions() {
+    const s = G.round;
+    const me = s.players.find(p => p.id === "you");
+    const toCall = s.highBid - me.currentBid;
+    const bar = $("action-bar");
+    bar.classList.remove("hidden");
+    bar.innerHTML = "";
+    $("raise-row").classList.remove("show");
+
+    const fold = this.mkBtn("انسحب", "act-fold", () => this.humanAction({ type: "fold" }));
+    bar.appendChild(fold);
+
+    if (toCall > 0) {
+      const call = this.mkBtn(`ساوم (${fmt(toCall)})`, "act-call", () => this.humanAction({ type: "call" }));
+      if (toCall > me.chips) call.disabled = true;
+      bar.appendChild(call);
+    } else {
+      bar.appendChild(this.mkBtn("مرّر", "act-call", () => this.humanAction({ type: "call" })));
+    }
+
+    if (me.chips > toCall + s.config.minRaise) {
+      bar.appendChild(this.mkBtn("ارفع", "act-raise", () => this.openRaise(me, toCall)));
+    }
+  },
+
+  openRaise(me, toCall) {
+    const s = G.round;
+    const row = $("raise-row");
+    const slider = $("raise-slider");
+    const min = s.highBid + s.config.minRaise;
+    const max = me.currentBid + me.chips;
+    slider.min = min; slider.max = max; slider.step = s.config.minRaise; slider.value = min;
+    $("raise-amount").textContent = fmt(min);
+    row.classList.add("show");
+  },
+  onRaiseSlide(v) { $("raise-amount").textContent = fmt(+v); },
+  confirmRaise() {
+    const v = +$("raise-slider").value;
+    $("raise-row").classList.remove("show");
+    this.humanAction({ type: "raise", amount: v });
+  },
+
+  showBossActions() {
+    const s = G.round;
+    const bar = $("action-bar");
+    bar.classList.remove("hidden");
+    bar.innerHTML = "";
+    this.setCenterMsg("أنت الشيخ! اختر قرارك");
+    bar.appendChild(this.mkBtn("داقش", "act-dagsh", () => this.humanDagsh()));
+    // عرض
+    const others = activePlayers(s).filter(p => p.id !== "you").length;
+    if (others > 0) {
+      bar.appendChild(this.mkBtn("اعرض مبلغًا", "act-offer", () => this.openOfferDialog()));
+    }
+  },
+
+  async humanAction(action) {
+    this.hideActions();
+    $("raise-row").classList.remove("show");
+    const labels = { fold: "انسحبت", call: G.round.highBid > G.round.players.find(p=>p.id==="you").currentBid ? "ساومت" : "مرّرت", raise: "رفعت ↑" };
+    this.showActionBubble("you", labels[action.type]);
+    if (action.type === "raise") vibrate(15);
+    applyAction(G.round, "you", action);
+    await sleep(400);
+    this.tick();
+  },
+
+  async humanDagsh() {
+    this.hideActions();
+    this.setCenterMsg("");
+    vibrate([30, 40, 30]);
+    bossDecide(G.round, { type: "dagsh" });
+    await this.revealSequence();
+  },
+
+  openOfferDialog() {
+    const s = G.round;
+    const max = s.pot;
+    Modal.open(`
+      <h2 class="display-font">اعرض مبلغًا</h2>
+      <p class="sub">إن قبله الجميع، تربح القِدر دون كشف أوراقك.</p>
+      <div class="field">
+        <label>مبلغ العرض: <span class="val" id="offer-val">${fmt(Math.round(max*0.4))}</span></label>
+        <input type="range" id="offer-slider" min="${s.config.minRaise}" max="${max}" step="${s.config.minRaise}" value="${Math.round(max*0.4)}" oninput="document.getElementById('offer-val').textContent=(+this.value).toLocaleString('en-US')">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="Modal.close()">رجوع</button>
+        <button class="btn btn-primary" onclick="UI.submitOffer()">قدّم العرض</button>
+      </div>
+    `);
+  },
+  submitOffer() {
+    const amount = +$("offer-slider").value;
+    Modal.close();
+    this.hideActions();
+    this.setCenterMsg("");
+    bossDecide(G.round, { type: "offer", amount });
+    this.tick();
+  },
+
+  // ----- مرحلة العرض: ردود اللاعبين -----
+  async handleOfferPhase() {
+    G.busy = true;
+    const s = G.round;
+    const others = activePlayers(s).filter(p => p.id !== s.offer.from);
+    this.hideActions();
+
+    for (const p of others) {
+      if (s.phase !== PHASE.OFFER) break; // قد ينتقل لداقش عند الرفض
+      if (s.offer.responses[p.id]) continue;
+      if (p.isBot) {
+        this.setCenterMsg(p.name + " يفكّر في العرض…");
+        await sleep(botThinkDelay(p.botLevel));
+        const resp = botOfferResponse(s, p.id);
+        this.showActionBubble(p.id, resp === "accept" ? "قبلت ✓" : "رفضت ✗");
+        respondToOffer(s, p.id, resp);
+        await sleep(500);
+      } else {
+        G.busy = false;
+        this.setCenterMsg("");
+        this.askHumanOffer();
+        return;
+      }
+    }
+    this.setCenterMsg("");
+    G.busy = false;
+    // بعد كل الردود: إما تسوية أو انتقل لداقش
+    if (s.phase === PHASE.REVEAL) { await this.revealSequence(); }
+    else this.tick();
+  },
+
+  askHumanOffer() {
+    const s = G.round;
+    const boss = s.players[s.bossIndex];
+    Modal.open(`
+      <h2 class="display-font">عرض من ${boss.name}</h2>
+      <p class="sub">${boss.name} يعرض إنهاء الجولة. القِدر الحالي ${fmt(s.pot)} فيشة.</p>
+      <div class="summary-row"><span class="k">قيمة العرض</span><span class="v" style="color:var(--gold-bright)">${fmt(s.offer.amount)}</span></div>
+      <p class="sub" style="margin-top:14px">إن قبلت ووافق الجميع، يأخذ ${boss.name} القِدر. إن رفضت، تُكشف الأوراق (داقش).</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" style="background:linear-gradient(180deg,#e74c3c,#c0392b);color:#fff" onclick="UI.humanOfferResponse('reject')">ارفض (داقش)</button>
+        <button class="btn btn-primary" onclick="UI.humanOfferResponse('accept')">اقبل</button>
+      </div>
+    `);
+  },
+  async humanOfferResponse(resp) {
+    Modal.close();
+    this.showActionBubble("you", resp === "accept" ? "قبلت ✓" : "رفضت ✗");
+    respondToOffer(G.round, "you", resp);
+    await sleep(500);
+    if (G.round.phase === PHASE.REVEAL) await this.revealSequence();
+    else this.tick();
+  },
+
+  // ----- تسلسل كشف الأوراق (داقش) -----
+  async revealSequence() {
+    const s = G.round;
+    this.setCenterMsg("كشف الأوراق…");
+    vibrate(30);
+    await sleep(600);
+    confirmReveal(s);
+    this.tick();
+  },
+
+  // ----- أزرار -----
+  mkBtn(text, cls, onclick) {
+    const b = document.createElement("button");
+    b.className = "act-btn " + cls;
+    b.textContent = text;
+    b.onclick = onclick;
+    return b;
+  },
+  hideActions() { $("action-bar").classList.add("hidden"); $("action-bar").innerHTML = ""; },
+
+  // ----- ملخص الجولة -----
+  showSummary() {
+    const s = G.round;
+    // مزامنة الأرصدة إلى G.players
+    s.players.forEach(rp => { const gp = G.players.find(p => p.id === rp.id); if (gp) gp.chips = rp.chips; });
+
+    const winnerId = s.result.winners[0];
+    const winner = s.players.find(p => p.id === winnerId);
+    const isMe = winnerId === "you";
+    const won = s.result.payouts[winnerId] || 0;
+
+    let revealHTML = "";
+    if (s.result.revealed) {
+      const contenders = activePlayers(s);
+      revealHTML = `<div class="reveal-grid">` + contenders.map(p => {
+        const e = s.result.evaluations[p.id];
+        const win = s.result.winners.includes(p.id);
+        return `<div class="reveal-player ${win ? "winner" : ""}">
+          <div class="reveal-cards">${p.hand.map(c => `<div class="rc ${SUIT_RED[c.suit]?'red':'black'}">${CARD_LABELS[c.rank]}${SUIT_SYM[c.suit]}</div>`).join("")}</div>
+          <div class="rp-name">${p.name} ${win ? "👑" : ""}</div>
+          <div class="rp-project">${e.label}</div>
+        </div>`;
+      }).join("") + `</div>`;
+    }
+
+    const reasonMap = {
+      dagsh: `داقش! كُشفت الأوراق وفاز صاحب أقوى مشروع.`,
+      offer_accepted: `قَبِل الجميع عرض الشيخ، ففاز بالقِدر دون كشف.`,
+      last_standing: `انسحب الجميع، ففاز ${winner.name} بالجولة مباشرة.`,
+    };
+
+    Modal.open(`
+      <div class="winner-banner">
+        <div class="winner-trophy">${isMe ? "🏆" : "🪙"}</div>
+        <div class="winner-name">${isMe ? "فزت!" : winner.name + " فاز"}</div>
+      </div>
+      <div class="summary-row"><span class="k">المبلغ</span><span class="v" style="color:var(--gold-bright)">+${fmt(won)} فيشة</span></div>
+      ${s.result.revealed && s.result.evaluations[winnerId] ? `<div class="summary-row"><span class="k">المشروع الفائز</span><span class="v">${s.result.evaluations[winnerId].label}</span></div>` : ""}
+      <div class="summary-row"><span class="k">السبب</span><span class="v" style="font-size:13px">${reasonMap[s.result.type] || ""}</span></div>
+      ${revealHTML}
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="UI.viewHistory()">السجل</button>
+        <button class="btn btn-primary" onclick="UI.nextRound()">الجولة التالية</button>
+      </div>
+    `, false);
+
+    if (isMe) this.celebrate();
+    vibrate(isMe ? [40, 60, 40] : 20);
+
+    G.history.unshift({
+      round: G.roundCount, winner: winner.name, amount: won,
+      project: s.result.revealed && s.result.evaluations[winnerId] ? s.result.evaluations[winnerId].label : "—",
+      type: s.result.type,
+    });
+    G.firstRound = false;
+  },
+
+  nextRound() { Modal.close(); setTimeout(() => this.newRound(), 300); },
+
+  celebrate() {
+    const colors = ["#d4af37", "#f0d77a", "#2ecc71", "#fff"];
+    for (let i = 0; i < 40; i++) {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.style.background = colors[i % colors.length];
+      c.style.left = (40 + Math.random() * 20) + "%";
+      c.style.top = "30%";
+      c.style.transform = `rotate(${Math.random()*360}deg)`;
+      $("app").appendChild(c);
+      const dx = (Math.random() - 0.5) * 400;
+      const dy = 300 + Math.random() * 300;
+      c.animate([
+        { transform: `translate(0,0) rotate(0)`, opacity: 1 },
+        { transform: `translate(${dx}px,${dy}px) rotate(${Math.random()*720}deg)`, opacity: 0 }
+      ], { duration: 1200 + Math.random()*800, easing: "cubic-bezier(0.3,0.7,0.5,1)" }).onfinish = () => c.remove();
+    }
+  },
+
+  // ----- السجل -----
+  viewHistory() {
+    const rows = G.history.length ? G.history.map(h => `
+      <div class="summary-row">
+        <span class="k">جولة ${h.round}</span>
+        <span class="v">${h.winner} · ${h.project} · +${fmt(h.amount)}</span>
+      </div>`).join("") : `<p class="sub">لا جولات بعد.</p>`;
+    Modal.open(`<h2 class="display-font">سجل الجولات</h2><div style="margin-top:10px">${rows}</div>
+      <div class="modal-actions"><button class="btn btn-primary" onclick="UI.backToSummary()">رجوع</button></div>`, false);
+  },
+  backToSummary() { Modal.close(); this.showSummary(); },
+
+  // ----- القوانين -----
+  showRules() {
+    Modal.open(`
+      <h2 class="display-font">قوانين داقش</h2>
+      <p class="sub">لعبة ورق اجتماعية بالفيش الافتراضية</p>
+      <ol class="rules-list">
+        <li><b>التوزيع:</b> يحصل كل لاعب على 4 أوراق، ويدفع الجميع رسمًا مبدئيًا (الأنتي) في القِدر.</li>
+        <li><b>السوم:</b> بالدور، كل لاعب إما يساوم (يجاري المبلغ)، أو يرفع، أو ينسحب. يبدأ من يمين الموزّع.</li>
+        <li><b>الشيخ (Boss):</b> صاحب أعلى مبلغ سوم. بعد انتهاء السوم يقرر مصير الجولة.</li>
+        <li><b>داقش:</b> يختاره الشيخ لكشف الأوراق ومواجهة الجميع — يفوز أقوى مشروع. أو يعرض مبلغًا: إن قبله الجميع فاز دون كشف.</li>
+        <li><b>ترتيب المشاريع:</b> رباعية > ثلاثية > زوجين > زوج > أعلى ورقة.</li>
+        <li><b>الفوز:</b> الفائز يأخذ القِدر. عند التعادل يُحتكم لأعلى ورقة ثم يُقسّم المبلغ. من ينفد رصيده يخرج، وآخر الباقين يفوز بالجلسة.</li>
+      </ol>
+      <div class="project-rank">
+        <div class="pr-item"><span><span class="pr-num">١</span> رباعية</span><span style="color:var(--text-dim);font-size:13px">٤ أوراق متطابقة</span></div>
+        <div class="pr-item"><span><span class="pr-num">٢</span> ثلاثية</span><span style="color:var(--text-dim);font-size:13px">٣ أوراق متطابقة</span></div>
+        <div class="pr-item"><span><span class="pr-num">٣</span> زوجين</span><span style="color:var(--text-dim);font-size:13px">زوجان مختلفان</span></div>
+        <div class="pr-item"><span><span class="pr-num">٤</span> زوج</span><span style="color:var(--text-dim);font-size:13px">ورقتان متطابقتان</span></div>
+        <div class="pr-item"><span><span class="pr-num">٥</span> أعلى ورقة</span><span style="color:var(--text-dim);font-size:13px">عند غياب أي مشروع</span></div>
+      </div>
+      <div class="modal-actions"><button class="btn btn-primary" onclick="Modal.close()">فهمت</button></div>
+    `);
+  },
+
+  // ----- الإعدادات -----
+  openSettings() {
+    Modal.open(`
+      <h2 class="display-font">الإعدادات</h2>
+      <p class="sub">تُطبَّق على الجلسة القادمة</p>
+      <div class="field">
+        <label>الاهتزاز على الجوال</label>
+        <div class="seg">
+          <button class="${G.settings.haptics?'on':''}" onclick="G.settings.haptics=true;this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">مُفعّل</button>
+          <button class="${!G.settings.haptics?'on':''}" onclick="G.settings.haptics=false;this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">مُعطّل</button>
+        </div>
+      </div>
+      <p class="sub" style="text-align:right;line-height:1.7">القوانين قابلة للتعديل (ترتيب الورق، المشاريع، كسر التعادل، الأنتي) عبر ملف الإعدادات في الكود — جاهزة للوحة إعدادات متقدمة لاحقًا.</p>
+      <div class="modal-actions"><button class="btn btn-primary" onclick="Modal.close()">تم</button></div>
+    `);
+  },
+
+  openInGameMenu() {
+    Modal.open(`
+      <h2 class="display-font">القائمة</h2>
+      <div class="menu" style="margin-top:16px;width:100%">
+        <button class="btn btn-ghost" onclick="Modal.close()">متابعة اللعب</button>
+        <button class="btn btn-ghost" onclick="Modal.close();UI.showRules()">القوانين</button>
+        <button class="btn btn-ghost" onclick="Modal.close();UI.viewHistory()">سجل الجولات</button>
+        <button class="btn btn-ghost" style="border-color:rgba(231,76,60,0.5)" onclick="Modal.close();UI.goStart()">إنهاء الجلسة</button>
+      </div>
+    `);
+  },
+
+  endSession(msg) {
+    Modal.open(`
+      <div class="winner-banner"><div class="winner-trophy">🏁</div><div class="winner-name" style="font-size:24px">${msg}</div></div>
+      <div class="summary-row"><span class="k">عدد الجولات</span><span class="v">${G.roundCount}</span></div>
+      <div class="modal-actions"><button class="btn btn-primary" onclick="Modal.close();UI.goStart()">القائمة الرئيسية</button></div>
+    `, false);
+  },
+
+  showFirstRoundHint() {
+    this.toast("دورك سيُحدَّد بإطار ذهبي حول صورتك");
+  },
+
+  toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2600);
+  },
+};
+
+const Modal = {
+  open(html, dismissible = true) {
+    $("modal-content").innerHTML = html;
+    $("modal-overlay").classList.add("active");
+    $("modal-overlay").dataset.dismissible = dismissible;
+  },
+  close() { $("modal-overlay").classList.remove("active"); },
+};
+$("modal-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "modal-overlay" && e.target.dataset.dismissible !== "false") Modal.close();
+});
+
+window.UI = UI;
+window.Modal = Modal;
+window.G = G;
+</script>
+</body>
+</html>
